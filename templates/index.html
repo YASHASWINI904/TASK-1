@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NestEstimate | Smart Home Price Prediction</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body data-theme="{{ theme|default('light') }}">
+  <header class="topbar">
+    <a class="brand" href="#home" aria-label="NestEstimate home"><span class="brand-icon">⌂</span><span><strong>Nest<span>Estimate</span></strong><small>PROPERTY INTELLIGENCE</small></span></a>
+    <div class="header-right"><span class="header-context">Welcome, {{ username }}</span><div class="topbar-status"><span class="status-dot"></span> Model ready</div><a class="header-avatar" href="{{ url_for('account') }}" aria-label="Open account details" title="My account">{{ username[:1]|upper }}</a><form method="post" action="{{ url_for('logout') }}" class="logout-form"><button type="submit" class="logout-btn" title="Sign out">↗ Sign out</button></form></div>
+  </header>
+  <aside class="sidebar">
+    <div class="sidebar-label">WORKSPACE</div>
+    <a class="side-link active" href="#home" data-page="home"><span>⌂</span><span><b>Overview</b><small>Your property dashboard</small></span></a>
+    <a class="side-link" href="#predict" data-page="predict"><span>⌕</span><span><b>Price Predictor</b><small>Estimate a property value</small></span></a>
+    <a class="side-link" href="#performance" data-page="performance"><span>▥</span><span><b>Model Insights</b><small>Metrics and explainability</small></span></a>
+    <a class="side-link" href="#saved-properties" data-page="saved"><span>♡</span><span><b>Saved Properties</b><small>Your favourite homes</small></span><span class="saved-count" id="saved-count">0</span></a>
+    <a class="side-link" href="{{ url_for('account') }}"><span>♙</span><span><b>My Account</b><small>Profile and personal details</small></span></a>
+    <a class="side-link" href="{{ url_for('settings') }}"><span>⚙</span><span><b>Settings</b><small>Preferences and security</small></span></a>
+    <div class="sidebar-label sidebar-label-lower">PROJECT</div>
+    <a class="side-link" href="#about" data-page="about"><span>ⓘ</span><span><b>About NestEstimate</b><small>Technology and methodology</small></span></a>
+    <div class="sidebar-quote"><span>⌂</span><p>“Better data.<br>Smarter decisions.”<br>Your dream home,<br>within reach.</p></div>
+  </aside>
+  <main class="main" id="home">
+    <div class="page-view active" data-view="home">
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">NestEstimate</span>
+        <h1>Welcome to <em>NestEstimate</em></h1>
+        <p>Estimate house prices with a machine learning model built from scratch. Enter the property details to get an instant estimate.</p>
+        <div class="feature-row">
+          <div class="feature"><span class="bubble green">✚</span><div><b>Linear Regression</b><small>From scratch (NumPy)</small></div></div>
+          <div class="feature"><span class="bubble purple">▣</span><div><b>Housing Dataset</b><small>{{ record_count }} sample records</small></div></div>
+          <div class="feature"><span class="bubble pink">✓</span><div><b>Model Evaluation</b><small>MSE, RMSE &amp; R²</small></div></div>
+          <div class="feature"><span class="bubble cyan">↗</span><div><b>Easy to Use</b><small>Clean interface</small></div></div>
+        </div>
+      </div>
+      <div class="hero-house" role="img" aria-label="Modern house illustration"></div>
+    </section>
+    <div class="home-spotlight"><div><span class="spotlight-kicker">YOUR PROPERTY WORKSPACE</span><h2>Make your next move with confidence.</h2><p>Explore estimates, understand the model, and keep your favourite homes in one place.</p></div><button type="button" class="primary-btn" data-go="predict">Start a price estimate <span>↗</span></button></div>
+    <section class="overview-tools">
+      <div class="overview-heading"><div><span class="eyebrow">YOUR ACTIVITY</span><h2>Dashboard at a glance</h2><p>Your saved shortlist and useful shortcuts, all in one place.</p></div><button type="button" class="text-action" data-go="saved">View all saved homes ↗</button></div>
+      <div class="overview-stats">
+        <article class="overview-stat"><span class="overview-stat-icon">♡</span><div><small>Saved properties</small><strong id="overview-saved-count">0</strong><span>Homes in your shortlist</span></div></article>
+        <article class="overview-stat"><span class="overview-stat-icon teal">₹</span><div><small>Average saved estimate</small><strong id="overview-average">—</strong><span>Across your saved homes</span></div></article>
+        <article class="overview-stat"><span class="overview-stat-icon gold">⌂</span><div><small>Lowest saved estimate</small><strong id="overview-lowest">—</strong><span>Useful for budget planning</span></div></article>
+      </div>
+      <div class="overview-bottom">
+        <section class="panel recent-saved-panel"><div class="section-heading"><div><h2>Recently saved properties</h2><p>Your latest saved estimates appear here.</p></div><button type="button" class="text-action" data-go="saved">Manage ↗</button></div><div id="overview-saved-list" class="overview-saved-list"><p class="overview-empty">Loading your saved properties…</p></div></section>
+        <section class="panel quick-actions-panel"><h2>Quick actions</h2><p>Jump straight to what you need.</p><button type="button" class="quick-action" data-go="predict"><span>⌕</span><span><b>Estimate a house price</b><small>Enter details and get a prediction</small></span><strong>↗</strong></button><button type="button" class="quick-action" data-go="saved"><span>♡</span><span><b>Compare saved homes</b><small>Review your property shortlist</small></span><strong>↗</strong></button><button type="button" class="quick-action" data-go="performance"><span>▥</span><span><b>Explore model insights</b><small>View metrics and coefficients</small></span><strong>↗</strong></button><a class="quick-action" href="{{ url_for('account') }}"><span>♙</span><span><b>Manage your account</b><small>Update your personal details</small></span><strong>↗</strong></a></section>
+      </div>
+    </section>
+    </div>
+    <div class="page-view" data-view="predict">
+    <div class="page-intro"><span class="eyebrow">PROPERTY WORKSPACE</span><h1>Predict a home's value</h1><p>Adjust the property details and get an instant machine-learning estimate.</p></div>
+    <div class="dashboard-grid">
+      <section class="panel property-panel" id="predict">
+        <h2><span class="section-icon">⌂</span> Property Details</h2>
+        <form id="prediction-form">
+          <label for="city">City</label><select id="city" name="city">{% for city in cities %}<option>{{ city }}</option>{% endfor %}</select>
+          <label for="area">Built-up Area (sq. ft.)</label><input id="area" type="number" min="200" max="10000" value="{{ defaults.area }}" required>
+          <label for="bedrooms">Bedrooms</label><select id="bedrooms">{% for n in range(1, 8) %}<option value="{{ n }}" {% if n == defaults.bedrooms %}selected{% endif %}>{{ n }}</option>{% endfor %}</select>
+          <label for="locality_score">Location / Locality Score (1–10)</label><select id="locality_score">{% for n in range(1, 11) %}<option value="{{ n }}" {% if n == defaults.locality_score %}selected{% endif %}>{{ n }}</option>{% endfor %}</select>
+          <label for="age">House Age (years)</label><input id="age" type="number" min="0" max="150" value="{{ defaults.age }}" required>
+          <label for="distance">Distance to Important Facilities (km)</label><input id="distance" type="number" min="0" max="100" step="0.1" value="{{ defaults.distance }}" required>
+          <button class="primary-btn" type="submit"><span>➤</span> Predict Price</button>
+          <p class="form-error" id="form-error" role="alert"></p>
+        </form>
+      </section>
+      <section class="panel estimate-panel">
+        <h2><span class="section-icon green-text">⌂</span> Estimated Price</h2>
+        <div class="price" id="price">₹ {{ "%.2f"|format(prediction) }} Lakhs</div>
+        <p class="price-sub">(for the given property details)</p>
+        <div class="notice"><span>♧</span><p>This is an educational estimate from our linear regression model. Actual prices vary with market conditions and property features.</p></div>
+        <button class="secondary-btn" id="save-property" type="button">♡ Save this property</button><p class="save-status" id="save-status" role="status"></p>
+      </section>
+      <section class="panel entered-panel">
+        <h2><span class="section-icon">▤</span> Property Details Entered</h2>
+        <div class="detail-row"><span>City</span><b id="out-city">Chennai</b></div>
+        <div class="detail-row"><span>Built-up Area</span><b id="out-area">1,200 sq. ft.</b></div>
+        <div class="detail-row"><span>Bedrooms</span><b id="out-bedrooms">3</b></div>
+        <div class="detail-row"><span>Location / Locality Score</span><b id="out-locality">8 / 10</b></div>
+        <div class="detail-row"><span>House Age</span><b id="out-age">5 years</b></div>
+        <div class="detail-row"><span>Distance to Facilities</span><b id="out-distance">2 km</b></div>
+      </section>
+    </div>
+    </div>
+    <div class="page-view" data-view="saved">
+    <div class="page-intro"><span class="eyebrow">YOUR SHORTLIST</span><h1>Saved homes</h1><p>Compare your estimates and export your shortlist whenever you need it.</p></div>
+    <section class="panel saved-panel" id="saved-properties">
+      <div class="section-heading saved-heading"><div><h2><span class="section-icon">♡</span> Saved Properties</h2><p>Keep a shortlist of your estimates and export a report whenever you need it.</p></div><button class="secondary-btn" id="download-report" type="button">↓ Download report</button></div>
+      <div id="saved-empty" class="saved-empty">No saved properties yet. Predict a price and select “Save this property” to build your shortlist.</div>
+      <div class="saved-table-wrap" id="saved-table-wrap" hidden><table class="saved-table"><thead><tr><th>City</th><th>Area</th><th>Beds</th><th>Locality</th><th>Estimated price</th><th>Saved</th><th></th></tr></thead><tbody id="saved-list"></tbody></table></div>
+      <p class="save-status" id="report-status" role="status"></p>
+    </section>
+    </div>
+    <div class="page-view" data-view="performance">
+    <div class="page-intro"><span class="eyebrow">MODEL TRANSPARENCY</span><h1>Understand the model</h1><p>Review test-set metrics, prediction behaviour, and the features influencing estimates.</p></div>
+    <section class="panel performance-panel" id="performance">
+      <div class="section-heading"><h2><span class="section-icon">▥</span> Model Performance</h2><p>Evaluation on held-out test data (20% split)</p></div>
+      <div class="metric-grid">
+        <div class="metric"><small>◈ MSE</small><strong>{{ "%.3f"|format(metrics.mse) }}</strong><span>(lakh²)</span></div>
+        <div class="metric"><small>R RMSE</small><strong>{{ "%.3f"|format(metrics.rmse) }}</strong><span>(lakh)</span></div>
+        <div class="metric"><small>◇ R² Score</small><strong>{{ "%.3f"|format(metrics.r2) }}</strong><span>({% if metrics.r2 >= 0.7 %}good fit{% elif metrics.r2 >= 0.4 %}moderate fit{% else %}needs improvement{% endif %})</span></div>
+      </div>
+      <div class="charts-grid">
+        <div class="chart-card"><h3>Actual vs Predicted Prices</h3><canvas id="priceChart"></canvas></div>
+        <div class="coefficient-card"><h3>Model Coefficients</h3><table><thead><tr><th>Feature</th><th>Coefficient</th></tr></thead><tbody>{% for item in coefficients %}<tr><td>{{ item.feature }}</td><td>{{ item.display }}</td></tr>{% endfor %}</tbody></table></div>
+      </div>
+      <div class="dataset-line"><span>ⓘ</span> Dataset: {{ record_count }} synthetic records for demonstration. Training records: {{ train_count }}; test records: {{ record_count - train_count }}. <a href="/dataset.csv">Download CSV</a></div>
+    </section>
+    </div>
+    <div class="page-view" data-view="about">
+    <div class="page-intro"><span class="eyebrow">ABOUT THE PROJECT</span><h1>Built for clearer decisions</h1><p>A transparent, educational house-price estimation experience.</p></div>
+    <section class="panel about-panel" id="about"><h2>About NestEstimate</h2><p>NestEstimate is an educational house-price estimation project. Its linear regression model is implemented with NumPy using batch gradient descent; scikit-learn is not used for training or prediction.</p><div class="about-tags"><span>Python</span><span>Flask</span><span>HTML / CSS / JavaScript</span><span>NumPy</span><span>Linear Regression</span></div></section>
+    <div class="about-note"><span>ⓘ</span> For educational demonstration only. The generated dataset is synthetic and is not a source of verified market valuations.</div>
+    </div>
+    <footer>NestEstimate <span>•</span> Smarter property estimates, clearer decisions.</footer>
+  </main>
+  <script>
+    function openPage(page, updateHash=true) {
+      document.querySelectorAll('[data-view]').forEach(v => v.classList.toggle('active', v.dataset.view === page));
+      document.querySelectorAll('[data-page]').forEach(a => a.classList.toggle('active', a.dataset.page === page));
+      if (updateHash) history.replaceState(null, '', '#' + ({home:'home',predict:'predict',performance:'performance',saved:'saved-properties',about:'about'}[page] || 'home'));
+      window.scrollTo({top:0, behavior:'smooth'});
+    }
+    document.querySelectorAll('[data-page]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); openPage(a.dataset.page); }));
+    document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => openPage(b.dataset.go)));
+    const initialPage = ({'#predict':'predict','#performance':'performance','#saved-properties':'saved','#about':'about'}[location.hash] || 'home');
+    if (initialPage !== 'home') openPage(initialPage, false);
+    const initialHash = location.hash;
+    openPage(initialHash === '#predict' ? 'predict' : initialHash === '#performance' ? 'performance' : initialHash === '#saved-properties' ? 'saved' : initialHash === '#about' ? 'about' : 'home', false);
+    const chartData = {{ chart_data|tojson }};
+    const ctx = document.getElementById('priceChart');
+    new Chart(ctx, {
+      type: 'scatter',
+      data: { datasets: [
+        { label: 'Actual', data: chartData.map(p => ({x:p.actual, y:p.actual})), backgroundColor: '#2678ff', pointRadius: 3 },
+        { label: 'Predicted', data: chartData.map(p => ({x:p.actual, y:p.predicted})), backgroundColor: '#ff9a35', pointRadius: 3 }
+      ]},
+      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top'}},
+        scales:{x:{title:{display:true,text:'Actual Price (Lakhs)'},beginAtZero:true},
+                y:{title:{display:true,text:'Predicted Price (Lakhs)'},beginAtZero:true}}}
+    });
+    const form = document.getElementById('prediction-form');
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const payload = {
+        city: document.getElementById('city').value,
+        area: document.getElementById('area').value,
+        bedrooms: document.getElementById('bedrooms').value,
+        locality_score: document.getElementById('locality_score').value,
+        age: document.getElementById('age').value,
+        distance: document.getElementById('distance').value
+      };
+      const button = form.querySelector('button');
+      const error = document.getElementById('form-error');
+      error.textContent = '';
+      button.disabled = true; button.textContent = 'Calculating...';
+      try {
+        const response = await fetch('/predict', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Could not predict price.');
+        document.getElementById('price').textContent = `₹ ${result.price.toFixed(2)} Lakhs`;
+        document.getElementById('out-city').textContent = result.city;
+        document.getElementById('out-area').textContent = `${Number(result.area).toLocaleString()} sq. ft.`;
+        document.getElementById('out-bedrooms').textContent = result.bedrooms;
+        document.getElementById('out-locality').textContent = `${result.locality_score} / 10`;
+        document.getElementById('out-age').textContent = `${result.age} years`;
+        document.getElementById('out-distance').textContent = `${result.distance} km`;
+        currentEstimate = {city:result.city, area:Number(result.area), bedrooms:Number(result.bedrooms), locality_score:Number(result.locality_score), age:Number(result.age), distance:Number(result.distance), price:Number(result.price)};
+        document.getElementById('save-status').textContent = '';
+      } catch (e) { error.textContent = e.message; }
+      finally { button.disabled = false; button.innerHTML = '<span>➤</span> Predict Price'; }
+    });
+
+    // Saved properties are stored server-side and scoped to the signed-in account.
+    const money = value => `₹ ${Number(value).toFixed(2)} Lakhs`;
+    async function readSaved() {
+      const response = await fetch('/api/saved-properties');
+      if (response.status === 401 || response.redirected) { location.href = '/login'; return []; }
+      if (!response.ok) throw new Error('Could not load your saved properties.');
+      return await response.json();
+    }
+    async function renderSaved() {
+      const empty = document.getElementById('saved-empty');
+      const wrap = document.getElementById('saved-table-wrap');
+      const list = document.getElementById('saved-list');
+      try {
+        const items = await readSaved();
+        empty.hidden = items.length > 0; wrap.hidden = items.length === 0; list.replaceChildren();
+        document.getElementById('saved-count').textContent = items.length;
+        document.getElementById('overview-saved-count').textContent = items.length;
+        const average = items.length ? items.reduce((sum, item) => sum + Number(item.price), 0) / items.length : null;
+        const lowest = items.length ? Math.min(...items.map(item => Number(item.price))) : null;
+        document.getElementById('overview-average').textContent = average === null ? '—' : money(average);
+        document.getElementById('overview-lowest').textContent = lowest === null ? '—' : money(lowest);
+        const preview = document.getElementById('overview-saved-list');
+        preview.replaceChildren();
+        if (!items.length) {
+          const emptyPreview = document.createElement('div'); emptyPreview.className = 'overview-empty';
+          emptyPreview.innerHTML = '<span>♡</span><b>No saved homes yet</b><p>Make a prediction and save a property to see it here.</p>';
+          const start = document.createElement('button'); start.type = 'button'; start.className = 'secondary-btn'; start.textContent = 'Create your first estimate'; start.addEventListener('click', () => openPage('predict'));
+          emptyPreview.appendChild(start); preview.appendChild(emptyPreview);
+        } else {
+          items.slice(0, 3).forEach(item => {
+            const card = document.createElement('article'); card.className = 'overview-saved-item';
+            const icon = document.createElement('span'); icon.className = 'overview-home-icon'; icon.textContent = '⌂';
+            const details = document.createElement('div'); details.className = 'overview-home-details';
+            const name = document.createElement('b'); name.textContent = item.city;
+            const meta = document.createElement('small'); meta.textContent = `${Number(item.area).toLocaleString()} sq. ft. · ${item.bedrooms} bedroom${Number(item.bedrooms) === 1 ? '' : 's'}`;
+            details.append(name, meta);
+            const price = document.createElement('strong'); price.className = 'overview-home-price'; price.textContent = money(item.price);
+            card.append(icon, details, price); preview.appendChild(card);
+          });
+          if (items.length > 3) { const more = document.createElement('button'); more.type = 'button'; more.className = 'text-action overview-more'; more.textContent = `View ${items.length - 3} more saved propert${items.length - 3 === 1 ? 'y' : 'ies'} →`; more.addEventListener('click', () => openPage('saved')); preview.appendChild(more); }
+        }
+        items.forEach(item => {
+          const tr = document.createElement('tr');
+          [item.city, `${Number(item.area).toLocaleString()} sq. ft.`, item.bedrooms, `${item.locality_score}/10`, money(item.price), item.savedAt].forEach(value => {
+            const td = document.createElement('td'); td.textContent = value; tr.appendChild(td);
+          });
+          const action = document.createElement('td'); const remove = document.createElement('button');
+          remove.type = 'button'; remove.className = 'remove-saved'; remove.textContent = 'Remove'; remove.setAttribute('aria-label', `Remove saved property in ${item.city}`);
+          remove.addEventListener('click', async () => {
+            const response = await fetch(`/api/saved-properties/${item.id}`, {method:'DELETE'});
+            if (response.ok) renderSaved();
+          });
+          action.appendChild(remove); tr.appendChild(action); list.appendChild(tr);
+        });
+      } catch (error) { empty.hidden = false; empty.textContent = 'Could not load saved properties. Please refresh the page.'; }
+    }
+    document.getElementById('save-property').addEventListener('click', async () => {
+      const status = document.getElementById('save-status');
+      if (!currentEstimate) { status.textContent = 'Predict a price first, then save the estimate.'; return; }
+      try {
+        const response = await fetch('/api/saved-properties', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(currentEstimate)});
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Could not save this property.');
+        renderSaved(); status.textContent = 'Property saved to your account.';
+      } catch (error) { status.textContent = error.message || 'Could not save this property.'; }
+    });
+    document.getElementById('download-report').addEventListener('click', async () => {
+      const status = document.getElementById('report-status');
+      let items; try { items = await readSaved(); } catch (_) { status.textContent = 'Could not load your saved properties.'; return; }
+      if (!items.length) { status.textContent = 'Save at least one property before downloading a report.'; return; }
+      const headers = ['City','Area (sq ft)','Bedrooms','Locality score','House age (years)','Distance to facilities (km)','Estimated price (lakhs)','Saved date'];
+      const rows = items.map(x => [x.city,x.area,x.bedrooms,x.locality_score,x.age,x.distance,x.price,x.savedAt]);
+      const csv = [headers,...rows].map(row => row.map(v => `"${String(v ?? '').replace(/"/g,'""')}"`).join(',')).join('\r\n');
+      const blob = new Blob(['\ufeff',csv], {type:'text/csv;charset=utf-8;'}); const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `NestEstimate-property-report-${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      status.textContent = 'Your property report has been downloaded.';
+    });
+    // The successful prediction handler above updates currentEstimate.
+    renderSaved();
+  </script>
+</body>
+</html>
